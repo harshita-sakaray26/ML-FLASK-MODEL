@@ -1,6 +1,7 @@
 import numpy as np
 from flask import Flask, request, jsonify, render_template
 import pickle
+import os
 
 # Create flask app
 flask_app = Flask(__name__)
@@ -54,4 +55,5 @@ def api_disease():
 
 
 if __name__ == "__main__":
-    flask_app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
