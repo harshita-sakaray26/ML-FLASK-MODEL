@@ -3,26 +3,27 @@ from flask import Flask, request, jsonify, render_template
 import pickle
 import os 
 from flask_cors import CORS
-
-# Create flask app
+import pandas as pd
 flask_app = Flask(__name__)
 CORS(flask_app)
 
 crop_model = pickle.load(open("crop_model.pkl", "rb"))
-# This is for crop prediction
-
-# Disease info model: should be a lookup, not an ML model
-# You may either load a DataFrame or a function as discussed earlier.
-import pandas as pd
 disease_data = pd.read_csv("Dataset/eggplant_diseases.csv")
+crop_data = pd.read_csv("Dataset/eggplant_details.csv")
 
-# --- Utility function ---
 def get_disease_info(disease_name: str):
     """Fetch disease information from CSV dataset."""
     result = disease_data[disease_data["Disease Name"].str.lower() == disease_name.lower()]
     if result.empty:
         return None
-    return result.to_dict(orient="records")[0]  # Return first matching record
+    return result.to_dict(orient="records")[0] 
+
+def get_crop_info(crop_name: str):
+    crop_name_clean = crop_name.strip().lower()
+    result = crop_data[crop_data["Crop Name"].astype(str).str.lower().str.strip() == crop_name_clean]
+    if result.empty:
+        return None
+    return result.to_dict(orient="records")[0]
 
 @flask_app.route("/")
 def home():
@@ -33,7 +34,7 @@ def api_predict():
     data = request.get_json()
     if not data:
         return jsonify({"error": "No input data provided"}), 400
-
+    
     try:
         float_features = [float(data[k]) for k in sorted(data.keys())]
         features = np.array([float_features])
@@ -41,7 +42,6 @@ def api_predict():
         return jsonify({"prediction": prediction})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @flask_app.route('/api/disease', methods=['GET','POST'])
 def api_disease():
@@ -55,6 +55,16 @@ def api_disease():
         return jsonify({"error": f"No records found for: {disease_name}"}), 404
     return jsonify({"info": info})
 
+@flask_app.route('/api/crop', methods=['POST'])
+def api_crop():
+    data = request.get_json()
+    crop_name = data.get("crop_name") if data else None
+    if not crop_name:
+        return jsonify({"error": "No crop_name provided"}), 400
+    info = get_crop_info(crop_name)
+    if info is None:
+        return jsonify({"error": f"No records found for: {crop_name}"}), 404
+    return jsonify({"info": info})
 
 
 if __name__ == "__main__":
