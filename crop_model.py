@@ -36,7 +36,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 # Load the dataset
-data = pd.read_csv('Dataset/eggplant_varieties.csv')  # Replace 'crop_data.csv' with your dataset file
+data = pd.read_csv('Dataset/eggplant_varieties.csv') 
 
 # Split the data into features and labels
 X = data.iloc[:, :-1]  # Features
