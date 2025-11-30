@@ -1,3 +1,4 @@
+# app.py (merged, debugged, safe JSON serialization, clean /api/devices)
 import os
 import io
 import base64
