@@ -395,8 +395,43 @@ def list_collections():
         logger.exception("Failed to list collections: %s", e)
         return jsonify({"error": "Failed to list collections", "details": str(e)}), 500
 
+
+# varify if IoT device data exists
+@app.route("/api/iot_device_exists", methods=["POST"])
+def api_iot_device_exists():
+    if mongo_db is None:
+        return jsonify({"error": "MongoDB not configured on server"}), 500
+
+    payload = request.get_json(silent=True)
+    if not payload:
+        return jsonify({"error": "JSON body required"}), 400
+
+    device_id = payload.get("device_id")
+    if not device_id:
+        return jsonify({"error": "device_id is required"}), 400
+
+    try:
+        coll = mongo_db[device_id]
+    except Exception as e:
+        logger.exception("Cannot access collection '%s': %s", device_id, e)
+        return jsonify({"error": f"Cannot access collection '{device_id}': {str(e)}"}), 500
+
+    try:
+        doc = coll.find_one()
+    except Exception as e:
+        logger.exception("Mongo find_one failed: %s", e)
+        return jsonify({"error": "Failed to query MongoDB", "details": str(e)}), 500
+
+    if not doc:
+        return jsonify({"exists": False, "device_id": device_id}), 404
+
+    return jsonify({"exists": True, "device_id": device_id}), 200
+
+
+
 # ---- run ----
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     logger.info("Starting Flask server on port %s", port)
     app.run(host="0.0.0.0", port=port)
+    
